@@ -5,7 +5,7 @@
 
 if [ $# -lt 2 ]; then
     echo "Usage: $0 <path-to-key-file> <ec2-instance-address>"
-    echo "Example: $0 ~/keys/vikramitwork-ec2-001-rsa.pem ec2-user@35.176.72.243"
+    echo "Example: $0 ~/keys/vikramitwork-ec2-001-rsa.pem ec2-user@18.171.211.249"
     exit 1
 fi
 
