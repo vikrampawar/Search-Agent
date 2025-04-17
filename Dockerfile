@@ -2,7 +2,7 @@
 FROM python:3.11-slim
 
 # Set work directory
-WORKDIR /app
+WORKDIR /app/app
 
 # Copy requirements and install dependencies
 COPY requirements.txt .
@@ -20,4 +20,4 @@ EXPOSE 8010
 ENV PYTHONUNBUFFERED=1
 
 # Start the FastAPI app with uvicorn
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8010"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8010"]

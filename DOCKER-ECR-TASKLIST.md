@@ -1,10 +1,10 @@
 # Dockerize & Deploy Search Agent: Task List
 
 - [x] 1. Create a Dockerfile for the Search Agent FastAPI app
-- [ ] 2. Create a `.dockerignore` file to optimize the build context
-- [ ] 3. Build the Docker image locally
-- [ ] 4. Run and test the Docker container locally
-- [ ] 5. (Optional) Create a docker-compose.yml for local development
+- [x] 2. Create a `.dockerignore` file to optimize the build context
+- [x] 3. Build the Docker image locally
+- [x] 4. Run and test the Docker container locally
+- [x] 5. (Optional) Create a docker-compose.yml for local development
 - [ ] 6. Prepare for ECR: Tag the image and log in to AWS ECR
 - [ ] 7. Push the Docker image to ECR
 

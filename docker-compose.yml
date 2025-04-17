@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  search-agent:
+    build: .
+    container_name: search-agent
+    ports:
+      - "8010:8010"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./app:/app/app:ro
+      - ./requirements.txt:/app/requirements.txt:ro
+    # Uncomment if you want to pass a .env file for local secrets
+    env_file:
+      - ./app/.env
