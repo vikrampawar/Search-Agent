@@ -55,7 +55,7 @@ Search-Agent/
 
 From the `app` directory, run:
 ```bash
-uvicorn main:app --reload
+uvicorn main:app --reload --port 8010
 ```
 
 Then open http://localhost:8000 in your browser to access the chat interface.

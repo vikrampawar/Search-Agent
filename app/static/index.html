@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ADK Streaming Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #messages {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 5px;
+        }
+        .user {
+            background-color: #e6f7ff;
+            text-align: right;
+        }
+        .agent {
+            background-color: #f0f0f0;
+        }
+        #messageForm {
+            display: flex;
+        }
+        #message {
+            flex-grow: 1;
+            padding: 8px;
+            margin-right: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        #sendButton {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #sendButton:disabled {
+            background-color: #cccccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>ADK Streaming Test</h1>
+    <div id="messages"></div>
+    <form id="messageForm">
+        <input type="text" id="message" name="message" placeholder="Type your message here..." />
+        <button type="submit" id="sendButton" disabled>Send</button>
+    </form>
+
+    <script>
+        // Connect to the server with a WebSocket connection
+        const sessionId = Math.random().toString(36).substring(2, 15);
+        const ws_url = "ws://" + window.location.host + "/ws/" + sessionId;
+        let ws = new WebSocket(ws_url);
+        
+        // Get DOM elements
+        const messageForm = document.getElementById("messageForm");
+        const messageInput = document.getElementById("message");
+        const sendButton = document.getElementById("sendButton");
+        const messagesDiv = document.getElementById("messages");
+        
+        // Current response being built
+        let currentResponse = "";
+        let responseDiv = null;
+        
+        // Enable the send button when connection is established
+        ws.onopen = function(event) {
+            sendButton.disabled = false;
+            console.log("Connection established");
+        };
+        
+        // Handle messages from the server
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            // If it's a turn complete message
+            if (data.turn_complete) {
+                // Reset for next message
+                currentResponse = "";
+                responseDiv = null;
+                
+                // Scroll to bottom
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                return;
+            }
+            
+            // If it's an interrupted message
+            if (data.interrupted) {
+                if (responseDiv) {
+                    responseDiv.innerHTML += "<br><i>[Conversation interrupted]</i>";
+                }
+                return;
+            }
+            
+            // If it's a regular message chunk
+            if (data.message) {
+                // If this is the first chunk, create a new response div
+                if (!responseDiv) {
+                    responseDiv = document.createElement("div");
+                    responseDiv.className = "message agent";
+                    messagesDiv.appendChild(responseDiv);
+                }
+                
+                // Add to the response div
+                responseDiv.innerHTML += data.message;
+                
+                // Scroll to bottom
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        };
+        
+        // Handle form submission
+        messageForm.addEventListener("submit", function(event) {
+            event.preventDefault();
+            
+            const message = messageInput.value.trim();
+            if (message) {
+                // Display user message
+                const userDiv = document.createElement("div");
+                userDiv.className = "message user";
+                userDiv.textContent = message;
+                messagesDiv.appendChild(userDiv);
+                
+                // Send message to server
+                ws.send(message);
+                
+                // Clear input field
+                messageInput.value = "";
+                
+                // Scroll to bottom
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        });
+        
+        // Handle WebSocket closure
+        ws.onclose = function(event) {
+            console.log("Connection closed");
+            sendButton.disabled = true;
+            
+            // Try to reconnect after 1 second
+            setTimeout(function() {
+                console.log("Attempting to reconnect...");
+                ws = new WebSocket(ws_url);
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
