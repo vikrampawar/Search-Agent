@@ -8,47 +8,111 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f9f9f9;
         }
         #messages {
             height: 400px;
             overflow-y: auto;
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .message {
-            margin-bottom: 10px;
-            padding: 8px;
-            border-radius: 5px;
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            line-height: 1.5;
+            max-width: 85%;
         }
         .user {
-            background-color: #e6f7ff;
+            background-color: #e3f2fd;
             text-align: right;
+            margin-left: auto;
+            border-bottom-right-radius: 2px;
+            border: 1px solid #bbdefb;
         }
         .agent {
-            background-color: #f0f0f0;
+            background-color: #f5f5f5;
+            border-bottom-left-radius: 2px;
+            border: 1px solid #e0e0e0;
         }
         #messageForm {
             display: flex;
         }
         #message {
             flex-grow: 1;
-            padding: 8px;
+            padding: 12px;
             margin-right: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 16px;
         }
         #sendButton {
-            padding: 8px 15px;
+            padding: 12px 20px;
             background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        #sendButton:hover {
+            background-color: #45a049;
         }
         #sendButton:disabled {
             background-color: #cccccc;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        /* Formatting for lists */
+        .agent ul, .agent ol {
+            padding-left: 25px;
+            margin: 10px 0;
+        }
+        .agent li {
+            margin-bottom: 5px;
+        }
+        .agent p {
+            margin: 10px 0;
+        }
+        /* For numbered lists with headers */
+        .list-item {
+            margin-bottom: 10px;
+        }
+        .list-item-header {
+            font-weight: bold;
+        }
+        .list-item-content {
+            margin-left: 15px;
+        }
+        /* Enhanced formatting for nested lists */
+        .agent ul ul, 
+        .agent ol ol, 
+        .agent ul ol, 
+        .agent ol ul {
+            padding-left: 20px;
+            margin: 5px 0;
+        }
+        
+        /* Indentation for nested list items */
+        .agent li li {
+            margin-bottom: 3px;
+        }
+        
+        /* Styling for bold and italic text */
+        .agent strong {
+            font-weight: bold;
+        }
+        
+        .agent em {
+            font-style: italic;
         }
     </style>
 </head>
@@ -82,12 +146,139 @@
             console.log("Connection established");
         };
         
+        // Process text to detect and format lists
+        function formatResponse(text) {
+            // Format bold text (**text**)
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Format italic text (*text*)
+            text = text.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
+            
+            // Look for numbered list patterns
+            if (text.includes("\n1.") || text.includes("\n1)") || text.includes(" 1.") || text.includes(" 1)")) {
+                // Convert numbered list patterns to HTML
+                text = text.replace(/(?:\n|^)(\d+)[.)] (.*?)(?=(?:\n\d+[.)])|$)/gs, function(match, number, content) {
+                    // Check if content has a title/header pattern (e.g., "Title: Details")
+                    const titleMatch = content.match(/^(.*?): (.*)/);
+                    if (titleMatch) {
+                        return `<div class="list-item">
+                            <div class="list-item-header">${number}. ${titleMatch[1]}</div>
+                            <div class="list-item-content">${titleMatch[2]}</div>
+                        </div>`;
+                    } else {
+                        return `<div class="list-item">${number}. ${content}</div>`;
+                    }
+                });
+            }
+            
+            // Process multi-level bullet lists
+            // First, identify all bullet points and their indentation levels
+            const lines = text.split('\n');
+            let inList = false;
+            let listHTML = '';
+            let listStack = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                // Check if line is a bullet point
+                const bulletMatch = line.match(/^(\s*)[-*+] (.*)/);
+                
+                if (bulletMatch) {
+                    const indentation = bulletMatch[1].length;
+                    const content = bulletMatch[2];
+                    
+                    // If not in a list yet, start a new list
+                    if (!inList) {
+                        listHTML += '<ul>';
+                        listStack.push('ul');
+                        inList = true;
+                    }
+                    
+                    // Determine the current level based on indentation
+                    const currentLevel = Math.floor(indentation / 2) + 1;
+                    const stackLevel = listStack.length;
+                    
+                    // If we need to go deeper in nesting
+                    if (currentLevel > stackLevel) {
+                        for (let j = stackLevel; j < currentLevel; j++) {
+                            listHTML += '<ul>';
+                            listStack.push('ul');
+                        }
+                    }
+                    // If we need to go up in the nesting hierarchy
+                    else if (currentLevel < stackLevel) {
+                        for (let j = stackLevel; j > currentLevel; j--) {
+                            listHTML += '</li></ul>';
+                            listStack.pop();
+                        }
+                        listHTML += '</li>';
+                    } 
+                    // Same level, just close the previous item if needed
+                    else if (i > 0 && lines[i-1].match(/^(\s*)[-*+] (.*)/)) {
+                        listHTML += '</li>';
+                    }
+                    
+                    // Add the list item
+                    listHTML += '<li>' + content;
+                } else {
+                    // If we're in a list but this line isn't a bullet point
+                    if (inList) {
+                        // If the line isn't empty, it's part of the previous item
+                        if (line.trim() !== '') {
+                            listHTML += ' ' + line;
+                        } 
+                        // Empty line means end of list
+                        else {
+                            // Close all open lists
+                            while (listStack.length > 0) {
+                                listHTML += '</li></ul>';
+                                listStack.pop();
+                            }
+                            inList = false;
+                            // Replace the original bullet list in text
+                            text = text.replace(/^(\s*)[-*+] (.*\n)+/m, listHTML);
+                            listHTML = '';
+                        }
+                    }
+                }
+            }
+            
+            // If we're still in a list at the end of processing, close it
+            if (inList) {
+                // Close the last item
+                listHTML += '</li>';
+                // Close all open lists
+                while (listStack.length > 0) {
+                    listHTML += '</ul>';
+                    listStack.pop();
+                }
+                // Replace the original bullet list in text
+                text = text.replace(/^(\s*)[-*+] (.*\n?)+/m, listHTML);
+            }
+            
+            // Handle simple bullet lists (as a fallback)
+            text = text.replace(/(?:\n|^)[*-] (.*?)(?=(?:\n[*-])|$)/gs, '<li>$1</li>');
+            if (text.includes('<li>') && !text.includes('<ul>')) {
+                text = '<ul>' + text + '</ul>';
+            }
+            
+            // Handle paragraphs
+            text = text.replace(/\n\n/g, '</p><p>');
+            
+            return text;
+        }
+        
         // Handle messages from the server
         ws.onmessage = function(event) {
             const data = JSON.parse(event.data);
             
             // If it's a turn complete message
             if (data.turn_complete) {
+                // Apply final formatting when response is complete
+                if (responseDiv) {
+                    responseDiv.innerHTML = formatResponse(responseDiv.innerHTML);
+                }
+                
                 // Reset for next message
                 currentResponse = "";
                 responseDiv = null;
