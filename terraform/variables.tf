@@ -52,8 +52,11 @@ variable "user_data_script" {
   default     = <<-EOF
     #!/bin/bash
     sudo yum update -y
-    sudo yum install -y python3 python3-pip git
+    sudo yum install -y python3 python3-pip git docker
     sudo pip3 install flask requests
+    sudo service docker start
+    sudo usermod -a -G docker ec2-user
+    # Log out and log back in for group changes to take effect (manual step if needed)
   EOF
 }
 

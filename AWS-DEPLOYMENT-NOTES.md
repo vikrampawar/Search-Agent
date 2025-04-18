@@ -178,6 +178,62 @@ aws ec2 start-instances --instance-ids your-instance-id
 aws ec2 terminate-instances --instance-ids your-instance-id
 ```
 
+## Tagging and Pushing Docker Image to AWS ECR
+
+To push your Docker image to AWS ECR after building it, follow these steps:
+
+1. **Authenticate Docker to your ECR registry:**
+   ```bash
+   aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 537124951217.dkr.ecr.eu-west-2.amazonaws.com
+   ```
+2. **Tag your local Docker image for ECR:**
+   ```bash
+   docker tag search-agent-search-agent:latest 537124951217.dkr.ecr.eu-west-2.amazonaws.com/ai/pkm:latest
+   ```
+   Replace `<local-image-name>`, `<tag>`, `<repository-name>`, `<your-account-id>`, and `<your-region>` as appropriate.
+
+3. **Push the image to ECR:**
+   ```bash
+   docker push 537124951217.dkr.ecr.eu-west-2.amazonaws.com/ai/pkm:latest
+   ```
+
+After pushing, you can pull and run the image from any EC2 instance with Docker and ECR access.
+
+## Using Your Docker Image from ECR on EC2
+
+To deploy and run your Docker image from ECR on an EC2 instance:
+
+1. **Install Docker on your EC2 instance (if not already installed):**
+   ```bash
+   sudo yum update -y
+   sudo yum install -y docker
+   sudo service docker start
+   sudo usermod -a -G docker ec2-user
+   # Log out and log back in for group changes to take effect
+   ```
+
+2. **Authenticate Docker to your AWS ECR registry:**
+   ```bash
+   aws ecr get-login-password --region <your-region> | docker login --username AWS --password-stdin <your-account-id>.dkr.ecr.<your-region>.amazonaws.com
+   ```
+   Replace `<your-region>` and `<your-account-id>` with your AWS region and account ID.
+
+3. **Pull your image from ECR:**
+   ```bash
+   docker pull <your-account-id>.dkr.ecr.<your-region>.amazonaws.com/<repository-name>:<tag>
+   ```
+   Replace placeholders with your actual values.
+
+4. **Run your Docker container:**
+   ```bash
+   docker run -d -p 8010:8010 <your-account-id>.dkr.ecr.<your-region>.amazonaws.com/<repository-name>:<tag>
+   ```
+   This will start your app and map port 8010 on the EC2 instance to port 8010 in the container.
+
+**Note:**
+- Ensure your EC2 instance has an IAM role with permissions to access ECR.
+- Open the necessary ports (e.g., 8010, 80, 443) in your EC2 security group for external access.
+
 ## Next Steps for Production Deployments
 
 1. **Add monitoring**: Consider AWS CloudWatch or a similar service

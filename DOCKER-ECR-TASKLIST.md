@@ -5,8 +5,8 @@
 - [x] 3. Build the Docker image locally
 - [x] 4. Run and test the Docker container locally
 - [x] 5. (Optional) Create a docker-compose.yml for local development
-- [ ] 6. Prepare for ECR: Tag the image and log in to AWS ECR
-- [ ] 7. Push the Docker image to ECR
+- [x] 6. Prepare for ECR: Tag the image and log in to AWS ECR
+- [x] 7. Push the Docker image to ECR
 
 ---
 
