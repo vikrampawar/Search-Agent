@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADK Streaming Test</title>
     <style>
         body {
@@ -113,6 +115,35 @@
         
         .agent em {
             font-style: italic;
+        }
+
+        /* Responsive adjustments for mobile devices */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 20px;
+            }
+            #messages {
+                height: 300px;
+            }
+            #messageForm {
+                display: flex;
+                flex-direction: column;
+            }
+            #message {
+                margin: 0 0 10px 0;
+                font-size: 14px;
+            }
+            #sendButton {
+                width: 100%;
+                padding: 12px;
+            }
+            .message {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
