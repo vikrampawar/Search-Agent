@@ -127,7 +127,10 @@
     <script>
         // Connect to the server with a WebSocket connection
         const sessionId = Math.random().toString(36).substring(2, 15);
-        const ws_url = "ws://" + window.location.host + "/ws/" + sessionId;
+        // Use secure WebSocket (wss://) if the page is loaded over HTTPS, otherwise use ws://
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws_url = protocol + "//" + window.location.host + "/ws/" + sessionId;
+        console.log("Connecting to WebSocket at: ", ws_url);
         let ws = new WebSocket(ws_url);
         
         // Get DOM elements

@@ -1,6 +1,10 @@
 import os
+import sys
 import json
 import asyncio
+
+# Add the parent directory to the Python path so we can import our local modules
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from pathlib import Path
 from dotenv import load_dotenv
@@ -15,11 +19,13 @@ from google.adk.agents import LiveRequestQueue
 from google.adk.agents.run_config import RunConfig
 from google.adk.sessions.in_memory_session_service import InMemorySessionService
 
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 
-from google_search_agent.agent import root_agent
+# Now this import should work
+from app.google_search_agent.agent import root_agent
 
 #
 # ADK Streaming
@@ -66,7 +72,7 @@ def start_agent_session(session_id: str):
 
 async def agent_to_client_messaging(websocket, live_events):
     """Agent to client communicaation"""
-    while True:
+    try:
         async for event in live_events:
             # turn_complete
             if event.turn_complete:
@@ -93,16 +99,21 @@ async def agent_to_client_messaging(websocket, live_events):
             await websocket.send_text(json.dumps({"message": text}))
             print(f"[AGENT TO CLIENT]: {text}")
             await asyncio.sleep(0)
+    except Exception as e:
+        print(f"Error in agent to client messaging: {str(e)}")
 
 
 async def client_to_agent_messaging(websocket, live_request_queue):
     """Client to agent communication"""
-    while True:
-        text = await websocket.receive_text()
-        content = Content(role="user", parts=[Part.from_text(text=text)])
-        live_request_queue.send_content(content=content)
-        print(f"[CLIENT TO AGNET]: {text}")
-        await asyncio.sleep(0)
+    try:
+        while True:
+            text = await websocket.receive_text()
+            content = Content(role="user", parts=[Part.from_text(text=text)])
+            live_request_queue.send_content(content=content)
+            print(f"[CLIENT TO AGENT]: {text}")
+            await asyncio.sleep(0)
+    except Exception as e:
+        print(f"Error in client to agent messaging: {str(e)}")
 
 
 #
@@ -111,7 +122,18 @@ async def client_to_agent_messaging(websocket, live_request_queue):
 
 app = FastAPI()
 
-STATIC_DIR = Path("static")
+# Add CORS middleware to handle requests from different origins (needed for Ngrok)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
+# Updated path to static directory - use the full path to app/static
+current_dir = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(current_dir, "static")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
@@ -134,17 +156,29 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     await websocket.accept()
     print(f"Client #{session_id} connected")
 
-    # Start agent session
-    live_events, live_request_queue = start_agent_session(session_id)
+    try:
+        # Start agent session
+        live_events, live_request_queue = start_agent_session(session_id)
 
-    # Start tasks
-    agent_to_client_task = asyncio.create_task(
-        agent_to_client_messaging(websocket, live_events)
-    )
-    client_to_agent_task = asyncio.create_task(
-        client_to_agent_messaging(websocket, live_request_queue)
-    )
-    await asyncio.gather(agent_to_client_task, client_to_agent_task)
+        # Start tasks
+        agent_to_client_task = asyncio.create_task(
+            agent_to_client_messaging(websocket, live_events)
+        )
+        client_to_agent_task = asyncio.create_task(
+            client_to_agent_messaging(websocket, live_request_queue)
+        )
+        
+        # Wait for both tasks to complete
+        done, pending = await asyncio.wait(
+            [agent_to_client_task, client_to_agent_task],
+            return_when=asyncio.FIRST_COMPLETED
+        )
 
-    # Disconnected
-    print(f"Client #{session_id} disconnected")
+        # Cancel pending tasks
+        for task in pending:
+            task.cancel()
+    except Exception as e:
+        print(f"WebSocket error: {str(e)}")
+    finally:
+        # Disconnected
+        print(f"Client #{session_id} disconnected")
