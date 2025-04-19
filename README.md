@@ -88,7 +88,9 @@ Try asking the agent:
 
 ## Deployment to AWS EC2
 
-### Prerequisites
+### Option 1: Manual Deployment
+
+#### Prerequisites
 - An AWS account
 - Basic knowledge of AWS EC2 and security groups
 - SSH client installed on your local machine
@@ -215,6 +217,81 @@ Try asking the agent:
 8. **Access Your Application**:
    - Open a browser and navigate to your EC2 public IP or domain name
    - Your Search Agent should now be accessible
+
+### Option 2: Deployment Using Terraform
+
+For more automated and reproducible deployments, you can use the Terraform configuration provided in this repository.
+
+#### Prerequisites
+- [Terraform](https://www.terraform.io/downloads) installed (version 1.0.0+)
+- AWS CLI configured with appropriate credentials
+- An SSH key pair in your AWS account
+
+#### Quick Start
+
+1. Navigate to the Terraform directory:
+   ```bash
+   cd terraform
+   ```
+
+2. Initialize Terraform:
+   ```bash
+   terraform init
+   ```
+
+3. Customize your deployment by creating a `terraform.tfvars` file:
+   ```hcl
+   region        = "us-west-2"    # Your preferred AWS region
+   instance_type = "t2.micro"     # EC2 instance type
+   app_name      = "search-agent" # Name for resources
+   key_name      = "your-key-name" # Your SSH key name (without .pem extension)
+   ```
+
+4. Apply the configuration:
+   ```bash
+   terraform apply
+   ```
+
+5. After deployment completes, SSH into your instance:
+   ```bash
+   ssh -i ~/keys/vikramitwork-ec2-001-rsa.pem ec2-user@35.176.72.243
+   ```
+
+6. Set your Google API key:
+   ```bash
+   vi /home/ec2-user/Search-Agent/app/.env
+   # Add: GOOGLE_API_KEY=your-api-key-here
+   ```
+
+7. Restart the application:
+   ```bash
+   sudo systemctl restart search-agent
+   ```
+
+#### Terraform Deployment Details
+
+The Terraform configuration deploys the following resources:
+- An EC2 instance running Amazon Linux
+- Security group with ports 22 (SSH), 80 (HTTP), 443 (HTTPS), and 5000 (App)
+- IAM role for EC2 to access ECR (if needed for Docker deployments)
+- Necessary networking components
+
+#### Troubleshooting Terraform Deployments
+
+If you encounter issues with your Terraform-deployed instance:
+
+1. Check the EC2 instance status in the AWS Console
+2. Verify your security group settings allow required ports
+3. Run the diagnostic scripts included in the repository:
+   ```bash
+   # Connect to your instance first
+   ssh -i ~/keys/vikramitwork-ec2-001-rsa.pem ec2-user@35.176.72.243
+   
+   # Then run the diagnostic script
+   python3 ~/ec2_quick_check.py
+   ```
+
+For more detailed Terraform deployment instructions, see the [Terraform Guide](docs/TERRAFORM_GUIDE.md) in the docs directory.
 
 ### SSL Configuration (Optional)
 

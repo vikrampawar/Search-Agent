@@ -11,3 +11,8 @@
     - Adjusted input field margins and font size.
     - Made the send button span full width.
     - Allowed chat messages (`.message`) to utilize full available width.
+
+## 2025-04-19
+- Added a new section to `README.md` for deploying with Terraform, including prerequisites, quick start, and troubleshooting steps.
+- Updated all SSH commands in the README to use the actual key and EC2 instance values (`~/keys/vikramitwork-ec2-001-rsa.pem` and `ec2-user@35.176.72.243`).
+- Ensured both manual and Terraform deployment instructions are available and clearly separated for user reference.
