@@ -1,5 +1,9 @@
 <!-- filepath: /home/vikram/gitper/Search-Agent/docs/PROMPTS_USED.md -->
 
+# PROMPTS_USED.md
+
+This document records all user prompts and instructions given to GitHub Copilot or other AI agents during the development of the Search Agent project. Each entry is timestamped and lightly edited for clarity. Agents should update this document with every new prompt or instruction received, ensuring an accurate and chronological log of user interactions for future reference and project traceability.
+
 ## 2025-04-19
 
 - The instructions.
